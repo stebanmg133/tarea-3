@@ -5,7 +5,8 @@
 #   ./scripts/db.sh                        # modo interactivo
 #   ./scripts/db.sh resumen                # un comando y sale
 #   ./scripts/db.sh "usuarios PENDIENTE"
-#   ./scripts/db.sh "sql select * from uco_usuario"
+#   ./scripts/db.sh "select * from uco_usuario"   # SQL directo, sin prefijo
+#   ./scripts/db.sh "sql select * from uco_usuario"  # alias equivalente
 #
 # Perfiles de base de datos:
 #   PERFIL=oracle   (por defecto) Oracle de Docker

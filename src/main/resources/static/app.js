@@ -1744,8 +1744,10 @@ const COMANDOS_INTERNOS = [
     ['./scripts/db.sh crear-usuario', 'Asistente interactivo para crear una cuenta'],
     ['./scripts/db.sh tablas', 'Muestra las tablas de la base de datos'],
     ['./scripts/db.sh "describir uco_nota"', 'Describe columnas, tipos y nulabilidad'],
-    ['./scripts/db.sh "sql select id, email, rol, estado from uco_usuario"', 'Ejecuta un SELECT libre'],
-    ['./scripts/db.sh "sql update uco_usuario set estado = \'ACTIVO\' where id = 7"', 'Ejecuta un UPDATE puntual']
+    ['./scripts/db.sh "select id, email, rol, estado from uco_usuario"', 'Consulta SQL directa (sin prefijo sql)'],
+    ['./scripts/db.sh "insert into uco_usuario (nombre_completo, email, password_hash, rol, estado) values (\'Ana\', \'ana@uco.edu.co\', \'<hash>\', \'ESTUDIANTE\', \'ACTIVO\')"', 'Inserta una fila'],
+    ['./scripts/db.sh "update uco_usuario set estado = \'ACTIVO\' where id = 7"', 'Modifica filas puntuales'],
+    ['./scripts/db.sh "sql select * from uco_nota"', 'Alias con prefijo sql (opcional)']
 ];
 
 function renderInterno() {
@@ -1767,12 +1769,16 @@ function renderInterno() {
 
 <span class="prompt">$</span> ./scripts/db.sh resumen
 <span class="prompt">$</span> ./scripts/db.sh "usuarios PENDIENTE"
-<span class="prompt">$</span> ./scripts/db.sh "sql select id, email, rol, estado from uco_usuario order by id"</div>
+<span class="prompt">$</span> ./scripts/db.sh "select id, email, rol, estado from uco_usuario order by id"
+<span class="prompt">$</span> ./scripts/db.sh "update uco_usuario set estado = 'ACTIVO' where id = 7"</div>
 
                 <div class="aviso-interno">
                     ${icono('alerta')}
-                    <div>Por defecto la consola usa Oracle (<code>PERFIL=oracle</code>). Con <code>PERFIL=dev ./scripts/db.sh …</code>
-                    trabaja sobre H2 en archivo. Los cambios son reales e inmediatos: no requiere reiniciar el servidor.</div>
+                    <div>El SQL se escribe <strong>directo</strong>: <code>select</code>, <code>insert</code>,
+                    <code>update</code>, <code>delete</code> y DDL. También puedes usar el prefijo <code>sql …</code>
+                    y terminar con punto y coma. Los cambios son reales e inmediatos: no requiere reiniciar el
+                    servidor. Por defecto la consola usa Oracle (<code>PERFIL=oracle</code>);
+                    con <code>PERFIL=dev ./scripts/db.sh …</code> trabaja sobre H2 en archivo.</div>
                 </div>
 
                 <div class="dos-paneles" style="margin-top:18px">
@@ -1797,7 +1803,7 @@ function renderInterno() {
                                 <div class="paso"><div><strong>Revisa las solicitudes.</strong> <code>./scripts/db.sh usuarios PENDIENTE</code></div></div>
                                 <div class="paso"><div><strong>Aprueba o rechaza.</strong> <code>./scripts/db.sh aprobar &lt;id&gt;</code></div></div>
                                 <div class="paso"><div><strong>Verifica las notas.</strong> <code>./scripts/db.sh notas</code></div></div>
-                                <div class="paso"><div><strong>Consulta libremente.</strong> <code>./scripts/db.sh "sql select …"</code></div></div>
+                                <div class="paso"><div><strong>Consulta libremente.</strong> <code>./scripts/db.sh "select …"</code></div></div>
                             </div>
                             <p class="modal-ayuda">Los comandos <code>aprobar</code>, <code>expulsar</code>, etc. aplican las mismas reglas del panel:
                             no se puede actuar sobre administradores ni sobre la propia cuenta.</p>

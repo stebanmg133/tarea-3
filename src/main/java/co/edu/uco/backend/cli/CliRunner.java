@@ -46,6 +46,14 @@ public class CliRunner implements ApplicationRunner {
 
     private static final Set<String> COMANDOS_SALIR = Set.of("salir", "exit", "quit", "q");
     private static final int FILAS_MAXIMAS = 50;
+    /**
+     * Primeras palabras que se reconocen como SQL directo. Así se puede escribir
+     * {@code select ...} o {@code insert ...} sin el prefijo {@code sql}.
+     */
+    private static final Set<String> CLAVES_SQL = Set.of(
+            "select", "with", "insert", "update", "delete", "merge", "values",
+            "create", "alter", "drop", "truncate", "comment", "rename",
+            "grant", "revoke", "begin", "declare", "call", "commit", "rollback");
 
     private final AdminService adminService;
     private final NotaRepository notas;
@@ -93,11 +101,20 @@ public class CliRunner implements ApplicationRunner {
     }
 
     private void ejecutar(String linea) {
-        String[] partes = linea.trim().split("\\s+", 2);
+        String sentencia = linea.trim();
+        if (sentencia.isEmpty()) {
+            return;
+        }
+        String[] partes = sentencia.split("\\s+", 2);
         String comando = partes[0].toLowerCase(Locale.ROOT);
         String argumentos = partes.length > 1 ? partes[1].trim() : "";
 
         try {
+            // SQL directo: el usuario escribe la sentencia tal cual, sin el prefijo "sql".
+            if (CLAVES_SQL.contains(comando)) {
+                sql(sentencia);
+                return;
+            }
             switch (comando) {
                 case "ayuda", "help", "?" -> ayuda();
                 case "resumen" -> resumen();
@@ -113,7 +130,8 @@ public class CliRunner implements ApplicationRunner {
                 case "tablas" -> tablas();
                 case "describir" -> describir(argumentos);
                 case "sql" -> sql(argumentos);
-                default -> Consola.error("Comando desconocido: " + comando + ". Prueba 'ayuda'.");
+                default -> Consola.error("Comando desconocido: " + comando
+                        + ". Prueba 'ayuda' o escribe una sentencia SQL (select, insert, update...).");
             }
         } catch (ApiException ex) {
             Consola.error(ex.getMessage());
@@ -145,7 +163,13 @@ public class CliRunner implements ApplicationRunner {
 
                   Insertar datos
                     crear-usuario                    Asistente interactivo (rol, aula, materia...)
-                    sql <sentencia>                  SQL libre: SELECT/INSERT/UPDATE/DELETE/DDL
+
+                  SQL directo
+                    select id, email, rol, estado from uco_usuario order by id;
+                    insert into uco_usuario (...) values (...);
+                    update uco_usuario set estado = 'ACTIVO' where id = 7;
+                    delete from uco_nota where id = 99;
+                    sql <sentencia>                  Alias explícito (mismo resultado)
 
                   Esquema
                     tablas                           Tablas del esquema
@@ -155,8 +179,9 @@ public class CliRunner implements ApplicationRunner {
                     ayuda                            Esta ayuda
                     salir                            Terminar
                 
-                  Nota: el SQL se ejecuta con el usuario de la aplicación. Si vas a insertar
-                  usuarios a mano, usa 'crear-usuario' para que la contraseña quede con BCrypt.
+                  Nota: escribe la sentencia tal cual, sin el prefijo 'sql'. El punto y coma
+                  final es opcional. Si vas a insertar usuarios a mano, usa 'crear-usuario'
+                  para que la contraseña quede con BCrypt.
                 """);
     }
 
@@ -265,7 +290,7 @@ public class CliRunner implements ApplicationRunner {
         if (!interactivo) {
             throw new IllegalArgumentException(
                     "crear-usuario es interactivo: ejecuta ./scripts/db.sh sin argumentos, "
-                            + "o usa 'sql insert ...' con un hash BCrypt ya generado");
+                            + "o inserta con SQL directo (insert ...) usando un hash BCrypt ya generado");
         }
         System.out.println(Consola.tenue("Asistente de creación (Enter para aceptar el valor entre paréntesis)"));
         String email = pedir("Correo", null);
@@ -339,26 +364,29 @@ public class CliRunner implements ApplicationRunner {
     }
 
     private void sql(String sentencia) {
-        if (sentencia.isBlank()) {
-            throw new IllegalArgumentException("Uso: sql <sentencia SQL>");
+        // El punto y coma final es opcional y Oracle JDBC no lo acepta.
+        String limpia = sentencia == null ? "" : sentencia.trim().replaceAll(";+\\s*$", "").trim();
+        if (limpia.isBlank()) {
+            throw new IllegalArgumentException(
+                    "Escribe una sentencia SQL. Ejemplo: select * from uco_usuario");
         }
 
-        String tipo = sentencia.split("\\s+", 2)[0].toLowerCase(Locale.ROOT);
+        String tipo = limpia.split("\\s+", 2)[0].toLowerCase(Locale.ROOT);
         switch (tipo) {
-            case "select", "with" -> ejecutarConsulta(sentencia);
+            case "select", "with" -> ejecutarConsulta(limpia);
             case "insert", "update", "delete", "merge" -> {
                 boolean sinFiltro = (tipo.equals("update") || tipo.equals("delete"))
-                        && !sentencia.toLowerCase(Locale.ROOT).matches("(?s).*\\bwhere\\b.*");
+                        && !limpia.toLowerCase(Locale.ROOT).matches("(?s).*\\bwhere\\b.*");
                 if (sinFiltro && !confirmar("La sentencia " + tipo.toUpperCase(Locale.ROOT)
                         + " no tiene WHERE y afecta toda la tabla. ¿Continuar?")) {
                     Consola.aviso("Cancelado.");
                     return;
                 }
-                int filas = jdbc.update(sentencia);
+                int filas = jdbc.update(limpia);
                 Consola.ok(filas + " fila(s) afectadas.");
             }
             default -> {
-                jdbc.execute(sentencia);
+                jdbc.execute(limpia);
                 Consola.ok("Sentencia ejecutada.");
             }
         }
@@ -397,6 +425,7 @@ public class CliRunner implements ApplicationRunner {
             Consola.aviso("No se pudo leer la conexión: " + ex.getMessage());
         }
         System.out.println(Consola.tenue("  Escribe 'ayuda' para ver los comandos, 'salir' para terminar."));
+        System.out.println(Consola.tenue("  También puedes escribir SQL directo: select * from uco_usuario"));
     }
 
     private NotaResponse aRespuesta(Nota nota) {

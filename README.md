@@ -162,8 +162,14 @@ Oracle como para H2. Se puede usar con la aplicación web encendida o apagada.
 # Un solo comando y sale
 ./scripts/db.sh resumen
 ./scripts/db.sh "usuarios PENDIENTE"
-./scripts/db.sh "sql select id, email, rol, estado from uco_usuario order by id"
+./scripts/db.sh "select id, email, rol, estado from uco_usuario order by id"
+./scripts/db.sh "insert into uco_usuario (nombre_completo, email, password_hash, rol, estado) values ('Ana', 'ana@uco.edu.co', '<hash>', 'ESTUDIANTE', 'ACTIVO')"
 ```
+
+El SQL se puede escribir **directo**, sin el prefijo `sql`: `select`, `insert`, `update`,
+`delete` y DDL se ejecutan tal cual y muestran la tabla resultado o cuántas filas se
+afectaron. El punto y coma final es opcional. `sql <sentencia>` sigue funcionando como
+alias.
 
 | Comando | Qué hace |
 |---|---|
@@ -179,7 +185,10 @@ Oracle como para H2. Se puede usar con la aplicación web encendida o apagada.
 | `crear-usuario` | Asistente interactivo de creación |
 | `tablas` | Lista las tablas de la base |
 | `describir <tabla>` | Columnas, tipos, tamaño y nulabilidad |
-| `sql <sentencia>` | Ejecuta SQL libre (`select`, `insert`, `update`, `delete`) |
+| `select …` | Consulta SQL directa: muestra el resultado en tabla |
+| `insert …` | Inserta filas y reporta cuántas se afectaron |
+| `update …` / `delete …` | Modifican o borran filas (pide confirmación si no hay `WHERE`) |
+| `sql <sentencia>` | Alias explícito del SQL directo |
 
 Por defecto usa Oracle (`PERFIL=oracle`); con `PERFIL=dev` trabaja sobre H2 en archivo:
 
@@ -188,8 +197,8 @@ PERFIL=dev ./scripts/db.sh resumen
 ```
 
 > Las operaciones son reales e inmediatas. El comando `crear-usuario` pide las
-> contraseñas por teclado y las guarda con BCrypt; para `sql insert` necesitas un hash
-> BCrypt ya generado.
+> contraseñas por teclado y las guarda con BCrypt; si insertas usuarios con SQL directo
+> necesitas un hash BCrypt ya generado.
 
 ## Probar sin interfaz gráfica
 
