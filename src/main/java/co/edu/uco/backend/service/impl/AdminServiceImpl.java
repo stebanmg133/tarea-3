@@ -153,7 +153,7 @@ public class AdminServiceImpl implements AdminService {
     @Override
     public void eliminar(Long usuarioId) {
         Usuario usuario = buscar(usuarioId);
-        if (usuario.getId().equals(usuarioActual.id())) {
+        if (esUsuarioActual(usuario)) {
             throw new ReglaNegocioException("No puedes eliminar tu propia cuenta");
         }
         if (usuario.esAdministrador()) {
@@ -198,7 +198,7 @@ public class AdminServiceImpl implements AdminService {
         if (usuario.esAdministrador()) {
             throw new ReglaNegocioException("No se puede " + accion + " a un administrador");
         }
-        if (usuario.getId().equals(usuarioActual.id())) {
+        if (esUsuarioActual(usuario)) {
             throw new ReglaNegocioException("No puedes cambiar el estado de tu propia cuenta");
         }
         if (!estadosPermitidos.contains(usuario.getEstado())) {
@@ -236,5 +236,11 @@ public class AdminServiceImpl implements AdminService {
     private Usuario buscar(Long usuarioId) {
         return usuarios.findById(usuarioId)
                 .orElseThrow(() -> RecursoNoEncontradoException.de("Usuario", usuarioId));
+    }
+
+    /** Compara con el usuario de la sesión (puede no haber sesión, por ejemplo en la CLI). */
+    private boolean esUsuarioActual(Usuario usuario) {
+        Long actual = usuarioActual.idOpcional();
+        return actual != null && actual.equals(usuario.getId());
     }
 }

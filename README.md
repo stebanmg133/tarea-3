@@ -4,8 +4,9 @@ API REST en Java para una plataforma web de la UCO: profesores y estudiantes se
 registran, el administrador aprueba o expulsa cuentas, y los profesores cargan y
 modifican las notas de los estudiantes de su aula.
 
-Todo se prueba desde la terminal: **no necesita interfaz gráfica** (aunque incluye
-una página mínima en `http://localhost:8080/` por comodidad).
+Todo se prueba desde la terminal: **no necesita interfaz gráfica**. Incluye además un
+panel web interactivo en `http://localhost:8080/` (HTML/CSS/JS sin dependencias) y una
+consola interna por comandos para operar la base de datos.
 
 ## Stack
 
@@ -30,7 +31,7 @@ cd uco-backend
 ```
 
 - API: <http://localhost:8080>
-- Página de prueba: <http://localhost:8080/>
+- Panel web: <http://localhost:8080/>
 - Consola H2: <http://localhost:8080/h2-console>
   (JDBC URL `jdbc:h2:file:./data/uco`, usuario `sa`, sin contraseña)
 - Administrador inicial: `admin@uco.edu.co` / `Admin123!`
@@ -128,6 +129,67 @@ rm -rf data
 # Oracle: borra las tablas y reinicia la app
 #   DROP TABLE UCO_NOTA, UCO_ESTUDIANTE, UCO_PROFESOR, UCO_USUARIO CASCADE CONSTRAINTS;
 ```
+
+## Panel web
+
+Abre <http://localhost:8080/>. El panel consume la misma API y no necesita compilación
+de front-end (son tres archivos estáticos en `src/main/resources/static/`).
+
+- **Ingreso:** botones con las cuentas de ejemplo que llenan el formulario; también hay
+  registro de estudiante y profesor (queda pendiente de aprobación).
+- **Administrador:** métricas generales, solicitudes pendientes con aprobación rápida,
+  búsqueda y filtros por rol/estado, creación y edición de usuarios, aprobar, rechazar,
+  expulsar, reactivar, eliminar e historial completo de notas.
+- **Profesor:** resumen del aula, estudiantes con su promedio y registro, edición y
+  eliminación de notas mediante formularios.
+- **Estudiante:** promedio general, notas por materia y detalle de cada calificación.
+- **Consola interna:** una vista con todos los comandos de `./scripts/db.sh` y botón
+  para copiarlos.
+
+La sesión se guarda en `localStorage`; si el token expira o la cuenta deja de estar
+activa, el panel vuelve al login automáticamente.
+
+## Consola interna de base de datos
+
+`./scripts/db.sh` abre la misma aplicación en modo consola (`--cli`): no levanta el
+servidor web, reutiliza los servicios y las reglas del backend, y sirve tanto para
+Oracle como para H2. Se puede usar con la aplicación web encendida o apagada.
+
+```bash
+# Modo interactivo (escribe "ayuda" y Enter)
+./scripts/db.sh
+
+# Un solo comando y sale
+./scripts/db.sh resumen
+./scripts/db.sh "usuarios PENDIENTE"
+./scripts/db.sh "sql select id, email, rol, estado from uco_usuario order by id"
+```
+
+| Comando | Qué hace |
+|---|---|
+| `resumen` | Conteos por rol y estado, y total de notas |
+| `usuarios [ROL] [ESTADO]` | Lista y filtra usuarios (`PENDIENTE`, `ACTIVO`, …) |
+| `pendientes` | Atajo para `usuarios PENDIENTE` |
+| `notas` | Lista las notas registradas |
+| `aprobar <id>` | Aprueba una solicitud (mismas reglas que la API) |
+| `rechazar <id>` | Rechaza una solicitud pendiente |
+| `expulsar <id>` | Expulsa un usuario activo |
+| `reactivar <id>` | Reactiva un usuario rechazado o expulsado |
+| `eliminar <id>` | Borra usuario, perfil y notas |
+| `crear-usuario` | Asistente interactivo de creación |
+| `tablas` | Lista las tablas de la base |
+| `describir <tabla>` | Columnas, tipos, tamaño y nulabilidad |
+| `sql <sentencia>` | Ejecuta SQL libre (`select`, `insert`, `update`, `delete`) |
+
+Por defecto usa Oracle (`PERFIL=oracle`); con `PERFIL=dev` trabaja sobre H2 en archivo:
+
+```bash
+PERFIL=dev ./scripts/db.sh resumen
+```
+
+> Las operaciones son reales e inmediatas. El comando `crear-usuario` pide las
+> contraseñas por teclado y las guarda con BCrypt; para `sql insert` necesitas un hash
+> BCrypt ya generado.
 
 ## Probar sin interfaz gráfica
 
@@ -229,6 +291,7 @@ Abre `prueba.http` en IntelliJ IDEA y ejecuta las peticiones en orden: las varia
 
 ```
 src/main/java/co/edu/uco/backend
+├── cli/          Consola interna (--cli) para operar la base por comandos
 ├── config/       Propiedades tipadas (UcoProperties) y creación del admin inicial
 ├── domain/       Entidades JPA con comportamiento (Usuario, Estudiante, Profesor, Nota)
 ├── dto/          Records de entrada/salida con validación
@@ -239,6 +302,11 @@ src/main/java/co/edu/uco/backend
 ├── service/      Interfaces de casos de uso
 │   └── impl/     Implementaciones transaccionales
 └── web/          Controladores REST y manejo global de errores (RFC 7807)
+
+src/main/resources/static
+├── index.html    Panel web (login, panel por rol y consola interna)
+├── styles.css    Diseño responsive
+└── app.js        Lógica del panel (sin dependencias)
 ```
 
 Decisiones destacadas:

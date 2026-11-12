@@ -29,4 +29,18 @@ public class UsuarioActualService {
     public Long id() {
         return requerir().getId();
     }
+
+    /**
+     * Id del usuario autenticado, o {@code null} si no hay sesión.
+     * Permite reutilizar los servicios desde herramientas internas (CLI).
+     */
+    public Long idOpcional() {
+        Authentication autenticacion = SecurityContextHolder.getContext().getAuthentication();
+        if (autenticacion == null || !autenticacion.isAuthenticated()) {
+            return null;
+        }
+        return usuarios.findByEmailIgnoreCase(autenticacion.getName())
+                .map(Usuario::getId)
+                .orElse(null);
+    }
 }
