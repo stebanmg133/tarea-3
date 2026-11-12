@@ -1,0 +1,152 @@
+### Variables
+@base = http://localhost:8080
+@adminEmail = admin@uco.edu.co
+@adminPassword = Admin123!
+@emailProfesor = profesor.demo@uco.edu.co
+@emailEstudiante = estudiante.demo@uco.edu.co
+@aula = A-101
+@materia = Bases de Datos
+@codigo = EST-DEMO-001
+
+### 1. Login del administrador
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{adminEmail}}",
+  "password": "{{adminPassword}}"
+}
+
+> {% client.global.set("tokenAdmin", response.body.token); %}
+
+### 2. Registro de profesor (queda PENDIENTE)
+POST {{base}}/api/auth/registro/profesor
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Profesor Demo",
+  "email": "{{emailProfesor}}",
+  "password": "Profesor123!",
+  "aula": "{{aula}}",
+  "materia": "{{materia}}"
+}
+
+> {% client.global.set("idUsuarioProfesor", response.body.id); %}
+
+### 3. Registro de estudiante (queda PENDIENTE)
+POST {{base}}/api/auth/registro/estudiante
+Content-Type: application/json
+
+{
+  "nombreCompleto": "Estudiante Demo",
+  "email": "{{emailEstudiante}}",
+  "password": "Estudiante123!",
+  "aula": "{{aula}}",
+  "codigoEstudiantil": "{{codigo}}"
+}
+
+> {% client.global.set("idUsuarioEstudiante", response.body.id); %}
+
+### 4. Un usuario PENDIENTE no puede entrar (403)
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailEstudiante}}",
+  "password": "Estudiante123!"
+}
+
+### 5. Listar usuarios pendientes
+GET {{base}}/api/admin/usuarios?estado=PENDIENTE
+Authorization: Bearer {{tokenAdmin}}
+
+### 6. Aprobar profesor
+PATCH {{base}}/api/admin/usuarios/{{idUsuarioProfesor}}/aprobar
+Authorization: Bearer {{tokenAdmin}}
+
+### 7. Aprobar estudiante
+PATCH {{base}}/api/admin/usuarios/{{idUsuarioEstudiante}}/aprobar
+Authorization: Bearer {{tokenAdmin}}
+
+### 8. Login del profesor (guarda el token)
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailProfesor}}",
+  "password": "Profesor123!"
+}
+
+> {% client.global.set("tokenProfesor", response.body.token); %}
+
+### 9. Login del estudiante (guarda el token)
+POST {{base}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "{{emailEstudiante}}",
+  "password": "Estudiante123!"
+}
+
+> {% client.global.set("tokenEstudiante", response.body.token); %}
+
+### 10. Estudiantes del aula del profesor
+GET {{base}}/api/profesor/estudiantes
+Authorization: Bearer {{tokenProfesor}}
+
+> {%
+    client.global.set("idEstudiante", response.body[0].estudianteId);
+%}
+
+### 11. Crear una nota
+POST {{base}}/api/profesor/notas
+Authorization: Bearer {{tokenProfesor}}
+Content-Type: application/json
+
+{
+  "estudianteId": {{idEstudiante}},
+  "periodo": "2026-1",
+  "valor": 3.5,
+  "comentario": "Primera entrega"
+}
+
+> {% client.global.set("idNota", response.body.id); %}
+
+### 12. Modificar la nota
+PUT {{base}}/api/profesor/notas/{{idNota}}
+Authorization: Bearer {{tokenProfesor}}
+Content-Type: application/json
+
+{
+  "periodo": "2026-1",
+  "valor": 4.7,
+  "comentario": "Nota corregida"
+}
+
+### 13. Notas del estudiante
+GET {{base}}/api/estudiante/notas
+Authorization: Bearer {{tokenEstudiante}}
+
+### 14. Promedio del estudiante
+GET {{base}}/api/estudiante/promedio
+Authorization: Bearer {{tokenEstudiante}}
+
+### 15. Expulsar al estudiante
+PATCH {{base}}/api/admin/usuarios/{{idUsuarioEstudiante}}/expulsar
+Authorization: Bearer {{tokenAdmin}}
+
+### 16. Reactivar al estudiante
+PATCH {{base}}/api/admin/usuarios/{{idUsuarioEstudiante}}/reactivar
+Authorization: Bearer {{tokenAdmin}}
+
+### 17. Resumen general del administrador
+GET {{base}}/api/admin/resumen
+Authorization: Bearer {{tokenAdmin}}
+
+### 18. Todas las notas (administrador)
+GET {{base}}/api/admin/notas
+Authorization: Bearer {{tokenAdmin}}
+
+### 19. Quién soy
+GET {{base}}/api/auth/me
+Authorization: Bearer {{tokenAdmin}}

@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UCO · Backend de prueba</title>
+    <style>
+        :root {
+            --fondo: #0f172a;
+            --panel: #1b2537;
+            --borde: #2d3a4f;
+            --texto: #e6edf7;
+            --suave: #94a3b8;
+            --acento: #38bdf8;
+            --ok: #4ade80;
+            --error: #f87171;
+        }
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 24px; min-height: 100vh;
+            font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+            background: var(--fondo); color: var(--texto);
+        }
+        h1 { font-size: 1.35rem; margin: 0 0 4px; }
+        h2 { font-size: 1rem; margin: 0 0 12px; color: var(--acento); }
+        p.ayuda { color: var(--suave); font-size: .85rem; margin: 0 0 20px; }
+        .rejilla { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+        section { background: var(--panel); border: 1px solid var(--borde); border-radius: 10px; padding: 16px; }
+        label { display: block; font-size: .78rem; color: var(--suave); margin: 8px 0 4px; }
+        input, select, textarea {
+            width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--borde);
+            background: #0d1524; color: var(--texto); font-size: .9rem;
+        }
+        button {
+            margin-top: 12px; padding: 8px 14px; border: 0; border-radius: 6px;
+            background: var(--acento); color: #04121f; font-weight: 600; cursor: pointer;
+            font-size: .85rem;
+        }
+        button.secundario { background: #334155; color: var(--texto); }
+        button:hover { filter: brightness(1.1); }
+        .fila { display: flex; gap: 8px; flex-wrap: wrap; align-items: flex-end; }
+        .fila > div { flex: 1 1 120px; }
+        pre {
+            background: #0d1524; border: 1px solid var(--borde); border-radius: 8px;
+            padding: 12px; overflow: auto; max-height: 46vh; font-size: .78rem; line-height: 1.45;
+            white-space: pre-wrap; word-break: break-word; margin: 0;
+        }
+        .pie { margin-top: 16px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+        .etiqueta {
+            font-size: .75rem; padding: 3px 8px; border-radius: 999px;
+            background: #0d1524; border: 1px solid var(--borde); color: var(--suave);
+        }
+        .ok { color: var(--ok); }
+        .error { color: var(--error); }
+        table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+        th, td { text-align: left; padding: 6px 4px; border-bottom: 1px solid var(--borde); }
+        th { color: var(--suave); font-weight: 500; }
+        .oculto { display: none; }
+    </style>
+</head>
+<body>
+
+<h1>UCO · Panel de prueba del backend</h1>
+<p class="ayuda">
+    Página mínima para probar la API sin instalar nada más. También puedes usar
+    <code>scripts/smoke-test.sh</code> o <code>prueba.http</code> desde la terminal.
+</p>
+
+<div class="rejilla">
+
+    <section>
+        <h2>1. Iniciar sesión</h2>
+        <label for="loginEmail">Correo</label>
+        <input id="loginEmail" type="email" placeholder="admin@uco.edu.co" autocomplete="username">
+        <label for="loginPassword">Contraseña</label>
+        <input id="loginPassword" type="password" placeholder="Admin123!" autocomplete="current-password">
+        <button onclick="iniciarSesion()">Entrar</button>
+        <div class="pie">
+            <span id="estadoSesion" class="etiqueta">Sin sesión</span>
+            <button class="secundario" onclick="cerrarSesion()">Salir</button>
+        </div>
+        <p class="ayuda" style="margin:12px 0 0">
+            Admin por defecto: <code>admin@uco.edu.co</code> / <code>Admin123!</code>
+        </p>
+    </section>
+
+    <section>
+        <h2>2. Registrarme</h2>
+        <label for="regRol">Soy</label>
+        <select id="regRol" onchange="camposRegistro()">
+            <option value="estudiante">Estudiante</option>
+            <option value="profesor">Profesor</option>
+        </select>
+        <label for="regNombre">Nombre completo</label>
+        <input id="regNombre" placeholder="Ana Pérez">
+        <label for="regEmail">Correo</label>
+        <input id="regEmail" type="email" placeholder="ana@uco.edu.co">
+        <label for="regPassword">Contraseña (mín. 8)</label>
+        <input id="regPassword" type="password" placeholder="Secreta123!">
+        <div class="fila">
+            <div>
+                <label for="regAula">Aula</label>
+                <input id="regAula" placeholder="A-101">
+            </div>
+            <div id="campoMateria">
+                <label for="regMateria">Materia</label>
+                <input id="regMateria" placeholder="Bases de Datos">
+            </div>
+            <div id="campoCodigo">
+                <label for="regCodigo">Código estudiantil</label>
+                <input id="regCodigo" placeholder="EST-001">
+            </div>
+        </div>
+        <button onclick="registrarme()">Enviar registro</button>
+        <p class="ayuda" style="margin:12px 0 0">
+            El registro queda <strong>PENDIENTE</strong> hasta que un administrador lo apruebe.
+        </p>
+    </section>
+
+    <section>
+        <h2>3. Acciones del administrador</h2>
+        <div class="fila">
+            <div>
+                <label for="filtroEstado">Estado</label>
+                <select id="filtroEstado">
+                    <option value="PENDIENTE">PENDIENTE</option>
+                    <option value="ACTIVO">ACTIVO</option>
+                    <option value="EXPULSADO">EXPULSADO</option>
+                    <option value="RECHAZADO">RECHAZADO</option>
+                    <option value="">Todos</option>
+                </select>
+            </div>
+            <button onclick="listarUsuarios()">Listar</button>
+            <button class="secundario" onclick="verResumen()">Resumen</button>
+        </div>
+        <div style="margin-top:12px">
+            <table>
+                <thead><tr><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="tablaUsuarios"></tbody>
+            </table>
+        </div>
+    </section>
+
+    <section>
+        <h2>4. Acciones del profesor</h2>
+        <button class="secundario" onclick="misEstudiantes()">Ver estudiantes de mi aula</button>
+        <div class="fila">
+            <div>
+                <label for="notaEstudiante">Estudiante</label>
+                <select id="notaEstudiante"></select>
+            </div>
+            <div>
+                <label for="notaPeriodo">Periodo</label>
+                <input id="notaPeriodo" value="2026-1">
+            </div>
+            <div>
+                <label for="notaValor">Nota (0.0 - 5.0)</label>
+                <input id="notaValor" type="number" step="0.1" min="0" max="5" value="4.0">
+            </div>
+        </div>
+        <label for="notaComentario">Comentario</label>
+        <input id="notaComentario" placeholder="Opcional">
+        <button onclick="crearNota()">Guardar nota</button>
+        <button class="secundario" onclick="verNotasProfesor()">Mis notas</button>
+    </section>
+
+    <section>
+        <h2>5. Acciones del estudiante</h2>
+        <button class="secundario" onclick="verNotasEstudiante()">Mis notas</button>
+        <button class="secundario" onclick="verPromedio()">Mi promedio</button>
+        <button class="secundario" onclick="verPerfil()">Mi perfil</button>
+    </section>
+
+    <section>
+        <h2>Salida</h2>
+        <pre id="salida">Aquí aparecerá el JSON de cada respuesta.</pre>
+    </section>
+
+</div>
+
+<script>
+    const CLAVE_TOKEN = 'uco.token';
+    const salida = document.getElementById('salida');
+
+    function mostrar(datos, ok = true) {
+        salida.className = ok ? 'ok' : 'error';
+        salida.textContent = typeof datos === 'string' ? datos : JSON.stringify(datos, null, 2);
+    }
+
+    function token() {
+        return localStorage.getItem(CLAVE_TOKEN) || '';
+    }
+
+    function actualizarSesion() {
+        const t = token();
+        document.getElementById('estadoSesion').textContent = t ? 'Con sesión' : 'Sin sesión';
+    }
+
+    async function api(metodo, ruta, cuerpo) {
+        const cabeceras = { 'Accept': 'application/json' };
+        if (cuerpo !== undefined) cabeceras['Content-Type'] = 'application/json';
+        if (token()) cabeceras['Authorization'] = 'Bearer ' + token();
+
+        const respuesta = await fetch(ruta, {
+            method: metodo,
+            headers: cabeceras,
+            body: cuerpo === undefined ? undefined : JSON.stringify(cuerpo)
+        });
+        const texto = await respuesta.text();
+        const datos = texto ? JSON.parse(texto) : null;
+
+        if (!respuesta.ok) {
+            mostrar((datos && (datos.detail || datos.errores)) || texto, false);
+            throw new Error(respuesta.status + ' ' + (datos?.detail || ''));
+        }
+        return datos;
+    }
+
+    async function iniciarSesion() {
+        try {
+            const datos = await api('POST', '/api/auth/login', {
+                email: document.getElementById('loginEmail').value.trim(),
+                password: document.getElementById('loginPassword').value
+            });
+            localStorage.setItem(CLAVE_TOKEN, datos.token);
+            actualizarSesion();
+            mostrar(datos);
+        } catch (e) { /* el error ya se muestra */ }
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem(CLAVE_TOKEN);
+        actualizarSesion();
+        mostrar('Sesión cerrada.');
+    }
+
+    function camposRegistro() {
+        const esProfesor = document.getElementById('regRol').value === 'profesor';
+        document.getElementById('campoMateria').classList.toggle('oculto', !esProfesor);
+        document.getElementById('campoCodigo').classList.toggle('oculto', esProfesor);
+    }
+
+    async function registrarme() {
+        const rol = document.getElementById('regRol').value;
+        const base = {
+            nombreCompleto: document.getElementById('regNombre').value.trim(),
+            email: document.getElementById('regEmail').value.trim(),
+            password: document.getElementById('regPassword').value,
+            aula: document.getElementById('regAula').value.trim()
+        };
+        const cuerpo = rol === 'profesor'
+            ? { ...base, materia: document.getElementById('regMateria').value.trim() }
+            : { ...base, codigoEstudiantil: document.getElementById('regCodigo').value.trim() };
+
+        try {
+            mostrar(await api('POST', '/api/auth/registro/' + rol, cuerpo));
+        } catch (e) { /* el error ya se muestra */ }
+    }
+
+    async function listarUsuarios() {
+        const estado = document.getElementById('filtroEstado').value;
+        const ruta = '/api/admin/usuarios' + (estado ? '?estado=' + estado : '');
+        try {
+            const usuarios = await api('GET', ruta);
+            const filas = usuarios.map(u => {
+                const acciones = estado === 'PENDIENTE'
+                    ? `<button data-id="${u.id}" data-accion="aprobar">Aprobar</button>`
+                    : `<button data-id="${u.id}" data-accion="expulsar" class="secundario">Expulsar</button>`;
+                return `<tr><td>${u.nombreCompleto}<br><small>${u.email}</small></td>
+                            <td>${u.rol}</td><td>${u.estado}</td><td>${acciones}</td></tr>`;
+            }).join('');
+            document.getElementById('tablaUsuarios').innerHTML = filas;
+            document.querySelectorAll('#tablaUsuarios button').forEach(boton => {
+                boton.addEventListener('click', () => accionAdmin(boton.dataset.id, boton.dataset.accion));
+            });
+            mostrar(usuarios);
+        } catch (e) { /* el error ya se muestra */ }
+    }
+
+    async function accionAdmin(usuarioId, accion) {
+        try {
+            await api('PATCH', `/api/admin/usuarios/${usuarioId}/${accion}`);
+            await listarUsuarios();
+        } catch (e) { /* el error ya se muestra */ }
+    }
+
+    async function verResumen() {
+        try { mostrar(await api('GET', '/api/admin/resumen')); } catch (e) { /* ... */ }
+    }
+
+    async function misEstudiantes() {
+        try {
+            const estudiantes = await api('GET', '/api/profesor/estudiantes');
+            document.getElementById('notaEstudiante').innerHTML = estudiantes
+                .map(e => `<option value="${e.estudianteId}">${e.nombreCompleto} (${e.codigoEstudiantil})</option>`)
+                .join('');
+            mostrar(estudiantes);
+        } catch (e) { /* ... */ }
+    }
+
+    async function crearNota() {
+        try {
+            mostrar(await api('POST', '/api/profesor/notas', {
+                estudianteId: Number(document.getElementById('notaEstudiante').value),
+                periodo: document.getElementById('notaPeriodo').value.trim(),
+                valor: Number(document.getElementById('notaValor').value),
+                comentario: document.getElementById('notaComentario').value.trim()
+            }));
+        } catch (e) { /* ... */ }
+    }
+
+    async function verNotasProfesor() {
+        try { mostrar(await api('GET', '/api/profesor/notas')); } catch (e) { /* ... */ }
+    }
+
+    async function verNotasEstudiante() {
+        try { mostrar(await api('GET', '/api/estudiante/notas')); } catch (e) { /* ... */ }
+    }
+
+    async function verPromedio() {
+        try { mostrar(await api('GET', '/api/estudiante/promedio')); } catch (e) { /* ... */ }
+    }
+
+    async function verPerfil() {
+        try { mostrar(await api('GET', '/api/auth/me')); } catch (e) { /* ... */ }
+    }
+
+    camposRegistro();
+    actualizarSesion();
+</script>
+</body>
+</html>
