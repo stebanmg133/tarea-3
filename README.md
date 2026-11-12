@@ -35,6 +35,9 @@ cd uco-backend
   (JDBC URL `jdbc:h2:file:./data/uco`, usuario `sa`, sin contraseña)
 - Administrador inicial: `admin@uco.edu.co` / `Admin123!`
 
+El perfil `dev` activa además el perfil `demo`, que carga profesores, estudiantes y
+notas de ejemplo (ver [Datos de ejemplo](#datos-de-ejemplo)).
+
 Los datos quedan en `./data/`. Para reiniciar de cero: `rm -rf data`.
 
 ## Oracle real con Docker
@@ -47,10 +50,12 @@ sudo usermod -aG docker "$USER"    # después cerrar y abrir sesión
 # 2. Levantar Oracle Free 23ai (~1.6 GB la primera vez)
 ./scripts/oracle-up.sh
 
-# 3. Arrancar la app contra Oracle
+# 3. Arrancar la app contra Oracle (con datos de ejemplo)
 set -a; . ./.env; set +a     # opcional, copia antes .env.example a .env
-./mvnw spring-boot:run -Dspring-boot.run.profiles=oracle
+./mvnw spring-boot:run -Dspring-boot.run.profiles=oracle,demo
 ```
+
+Quita `,demo` si quieres la base vacía (solo con el administrador inicial).
 
 Por defecto el contenedor expone:
 
@@ -86,6 +91,43 @@ plantilla; la app lee variables de entorno, no el archivo `.env`).
 | `ORACLE_USER` / `ORACLE_PASSWORD` | `UCO` / `UCO` | Credenciales de la app |
 
 > El administrador solo se crea si no existe un usuario con ese correo.
+
+## Datos de ejemplo
+
+El perfil `demo` crea cuentas, perfiles y notas de ejemplo. Es idempotente: si un
+correo ya existe, no se duplica.
+
+| Correo | Contraseña | Rol | Estado | Aula / Materia |
+|---|---|---|---|---|
+| `admin@uco.edu.co` | `Admin123!` | ADMIN | ACTIVO | — |
+| `coordinacion@uco.edu.co` | `Demo123!` | ADMIN | ACTIVO | — |
+| `laura.gomez@uco.edu.co` | `Demo123!` | PROFESOR | ACTIVO | A-101 / Bases de Datos |
+| `andres.ramirez@uco.edu.co` | `Demo123!` | PROFESOR | ACTIVO | A-102 / Programación Web |
+| `monica.salazar@uco.edu.co` | `Demo123!` | PROFESOR | ACTIVO | B-201 / Cálculo Diferencial |
+| `jorge.cardenas@uco.edu.co` | `Demo123!` | PROFESOR | PENDIENTE | A-103 / Redes de Datos |
+| `juan.perez@uco.edu.co` | `Demo123!` | ESTUDIANTE | ACTIVO | A-101 · EST-2026-001 |
+| `sofia.torres@uco.edu.co` | `Demo123!` | ESTUDIANTE | ACTIVO | A-101 · EST-2026-002 |
+| `camilo.rojas@uco.edu.co` | `Demo123!` | ESTUDIANTE | ACTIVO | A-102 · EST-2026-003 |
+| `valentina.diaz@uco.edu.co` | `Demo123!` | ESTUDIANTE | ACTIVO | A-102 · EST-2026-004 |
+| `diego.herrera@uco.edu.co` | `Demo123!` | ESTUDIANTE | ACTIVO | B-201 · EST-2026-005 |
+| `mariana.lopez@uco.edu.co` | `Demo123!` | ESTUDIANTE | PENDIENTE | A-101 · EST-2026-006 |
+| `santiago.munoz@uco.edu.co` | `Demo123!` | ESTUDIANTE | EXPULSADO | A-102 · EST-2026-007 |
+
+Notas ya registradas (periodo `2026-1`): Juan 4.5, Sofía 2.9, Camilo 3.7,
+Valentina 4.9 y Diego 3.2.
+
+Así puedes probar de inmediato la aprobación (`jorge.cardenas` y `mariana.lopez` están
+pendientes), la expulsión (`santiago.munoz`) y las notas por aula.
+
+Para reiniciar los datos:
+
+```bash
+# H2 (dev)
+rm -rf data
+
+# Oracle: borra las tablas y reinicia la app
+#   DROP TABLE UCO_NOTA, UCO_ESTUDIANTE, UCO_PROFESOR, UCO_USUARIO CASCADE CONSTRAINTS;
+```
 
 ## Probar sin interfaz gráfica
 
