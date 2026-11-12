@@ -1,3 +1,14 @@
+## Nota de entrega
+
+**tarea-3 — Steban Muñoz Gallego**
+
+hola profe, hice lo mas posible por implementar todas las cosas que usted nos enseño en la clase.
+esta es una pagina web donde se pueden registrar estudiantes y profesores, con la materia y creo que tambien el aula, se puede ver la mejor nota que materia esta registrada cada uno etc.. , este funciona con una base de datos en oracle.
+realmente intente entender lo mas posible de la base de datos , pero se me hizo un poco complicado.
+para poder ingresar el admin es: admin@uco.edu.co
+la clave es: Admin123!
+
+
 # Backend UCO
 
 API REST en Java para una plataforma web de la UCO: profesores y estudiantes se
@@ -347,13 +358,3 @@ expulsión) contra H2 en memoria con el perfil `test`.
 - Desactiva la consola H2 (`spring.h2.console.enabled=false`, ya viene así en `oracle`).
 - Considera un usuario de base de datos con permisos mínimos y migraciones (Flyway/Liquibase)
   en lugar de `ddl-auto=update`.
-
-## Nota de entrega
-
-**tarea-3 — Steban Muñoz Gallego**
-
-hola profe, hice lo mas posible por implementar todas las cosas que usted nos enseño en la clase.
-esta es una pagina web donde se pueden registrar estudiantes y profesores, con la materia y creo que tambien el aula, se puede ver la mejor nota que materia esta registrada cada uno etc.. , este funciona con una base de datos en oracle.
-realmente intente entender lo mas posible de la base de datos , pero se me hizo un poco complicado.
-para poder ingresar el admin es: admin@uco.edu.co
-la clave es: Admin123!
